@@ -1,0 +1,38 @@
+Requêtes sur Wikidata (à executer dans https://query.wikidata.org/)
+
+1. Les Grandes Villes Africaines et Leur Population --> biggest_cities.csv:
+
+SELECT ?cityLabel ?countryLabel ?population WHERE {
+  ?city wdt:P31 wd:Q515;  # ville
+        wdt:P17 ?country;  # pays
+        wdt:P1082 ?population.  # population
+  ?country wdt:P30 wd:Q15.  # Filtre : Afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],fr". }
+}
+ORDER BY DESC(?population)
+
+
+2. Les Principales Infrastructures de Transport (Routes et Autoroutes) en Afrique --> longest_roads.csv:
+
+SELECT ?roadLabel ?countryLabel ?length WHERE {
+  ?road wdt:P31 wd:Q34442;  # routes et autoroutes
+        wdt:P17 ?country;  # pays
+        wdt:P2043 ?length.  # longueur
+  ?country wdt:P30 wd:Q15.  # filtre: afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],fr". }
+}
+ORDER BY DESC(?length)
+
+
+3. Evolution de la Population Urbaine en Afrique au Fil du Temps --> urban_evolution.csv:
+
+SELECT ?cityLabel ?year ?population WHERE {
+  ?city wdt:P31 wd:Q515;  # ville
+        wdt:P17 ?country;  # pays
+        p:P1082 ?popStatement.  # population avec historique
+  ?popStatement ps:P1082 ?population; pq:P585 ?year.  # associer année et population
+  ?country wdt:P30 wd:Q15.  # afrique
+  FILTER(YEAR(?year) >= 1970)  # filtrer les données après 1970
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],fr". }
+}
+ORDER BY ?city ?year
