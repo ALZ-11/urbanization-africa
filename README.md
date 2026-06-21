@@ -3,6 +3,9 @@
 ## Description
 This project focuses on analyzing urbanization trends and infrastructure in Africa. It uses SPARQL queries to extract data from Wikidata and Python for data analysis and visualization.
 
+## Live Dashboard
+*   **Interactive Web App:** [https://urbanization-africa.streamlit.app/]
+
 ## Project Structure
 - `data/`: Contains the cached static datasets extracted from Wikidata.
 - `notebooks/`: Exploratory data analysis notebook (`visualisations.ipynb`).
