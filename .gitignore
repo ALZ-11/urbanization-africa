@@ -1,6 +1,8 @@
 docs/visualisations.pdf
 docs/FS_BigData_UrbanisationAfrique.pdf
 
+.env
+
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
