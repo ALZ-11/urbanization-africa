@@ -3,3 +3,4 @@ matplotlib
 streamlit
 plotly
 python-dotenv
+requests

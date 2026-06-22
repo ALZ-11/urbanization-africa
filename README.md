@@ -10,6 +10,7 @@ The project demonstrates dynamic data fusion and geospatial visualization by pul
 
 ## Advanced Features
 *   **Live SPARQL ETL Engine**: Python-driven query orchestration communicating directly with the Wikidata API with customized compliant User-Agent headers and local configuration loading.
+*   **Decoupled SPARQL Files**: Multi-dimensional semantic queries decoupled into standalone `.sparql` files inside a queries registry module.
 *   **Interactive GIS Mapping**: Mapbox OpenStreetMap scatter maps displaying city density, maritime ports, and aviation hubs color-coded by infrastructure type.
 *   **Multi-Source Data Fusion**: Integration with the World Bank API to overlay city-level demographic data on top of national urbanization trajectories (`SP.URB.TOTL.IN.ZS`).
 *   **Predictive Demographic Modeling**: In-memory least-squares linear regression (via NumPy `polyfit`) calculating and graphing population projections up to the year 2035.
@@ -17,11 +18,14 @@ The project demonstrates dynamic data fusion and geospatial visualization by pul
 *   **Data Export**: CSV compilation allowing users to download any of the live-generated datasets with a single click.
 
 ## Project Structure
-*   `data/`: (Optional) Directory reserved for local data caching or offline layers.
-*   `notebooks/`: Exploratory data analysis notebook (`visualisations.ipynb`).
-*   `docs/`: Reference documentation, SPARQL queries (`requetes_SPARQL.txt`), and static outputs.
-*   `src/`: Core Python modules containing the programmatic data extraction engine (`extract.py`).
-*   `app.py`: Streamlit-based presentation layer for interactive web analysis.
+*   `src/`: Core Python modules managing extraction, configurations, and transformations.
+    *   `src/queries/`: Decoupled standalone `.sparql` query files.
+    *   `src/queries.py`: Helper module loading queries dynamically.
+    *   `src/extract.py`: Direct network clients handling Wikidata and World Bank API requests.
+    *   `src/transform.py`: Standardized dataset cleaning, datatype conversions, and parsing routines.
+    *   `src/constants.py`: Dedicated configuration module containing static mapping datasets.
+*   `tests/`: Automated test suite containing offline unit tests (`test_transform.py`).
+*   `app.py`: Streamlit-based presentation layer managing interactive web components and Plotly charts.
 *   `.env.example`: Configuration template for local developer credentials.
 
 ## Setup & Running the Project
@@ -31,7 +35,7 @@ Ensure you have Python installed. Clone this repository, set up your local envir
 
 ```bash
 # Clone and enter the repository
-git clone https://github.com/ALZ-11/urbanization-africa.git
+git clone https://github.com/ALZ-11/urbanization-africa
 cd urbanization-africa
 
 # Create your local configuration file
@@ -48,8 +52,8 @@ To launch the interactive dashboard locally:
 streamlit run app.py
 ```
 
-### 3. Run the Exploratory Notebook
-To open and run the Jupyter notebook locally:
+### 3. Run the Automated Test Suite
+To execute the automated offline unit tests verifying your transformation and parsing calculations:
 ```bash
-jupyter notebook notebooks/visualisations.ipynb
+python -m unittest tests/test_transform.py
 ```
