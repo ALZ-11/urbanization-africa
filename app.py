@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import time
+import numpy as np
 from src.extract import WikidataExtractor
 
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
@@ -193,7 +194,6 @@ def load_world_bank_data(country_code):
 def convert_to_downloadable_csv(df):
     return df.to_csv(index=False).encode("utf-8")
 
-# New Addition: Capture system start timestamp to record the global data loading duration
 start_time = time.time()
 
 with st.spinner("Connexion à Wikidata et synchronisation globale de l'ensemble des réseaux d'infrastructures..."):
@@ -379,13 +379,56 @@ with tab3:
                     
         st.markdown("---")
         
+        show_projections = st.checkbox("Afficher les projections lineaires de croissance demographique (jusqu'en 2035)", value=False)
+        
+        df_filtered["Statut"] = "Historique"
+        df_combined_plot = df_filtered.copy()
+        
+        if show_projections:
+            projection_records = []
+            for city in selected_cities:
+                df_city = df_filtered[df_filtered["cityLabel"] == city].sort_values("year")
+                if len(df_city) >= 2:
+                    x_years = df_city["year"].values
+                    y_pops = df_city["population"].values
+                    
+                    slope, intercept = np.polyfit(x_years, y_pops, 1)
+                    
+                    last_year = int(x_years[-1])
+                    
+                    if last_year < 2035:
+                        projection_records.append({
+                            "cityLabel": city,
+                            "year": last_year,
+                            "population": int(y_pops[-1]),
+                            "Statut": "Projection"
+                        })
+                        
+                        forecast_years = list(range(last_year + 5, 2036, 5))
+                        if 2035 not in forecast_years:
+                            forecast_years.append(2035)
+                            
+                        for f_year in forecast_years:
+                            predicted_pop = slope * f_year + intercept
+                            projection_records.append({
+                                "cityLabel": city,
+                                "year": f_year,
+                                "population": max(0, int(predicted_pop)), # Clip negative estimates to 0
+                                "Statut": "Projection"
+                            })
+                            
+            if projection_records:
+                df_proj = pd.DataFrame(projection_records)
+                df_combined_plot = pd.concat([df_filtered, df_proj], ignore_index=True)
+        
         fig_line = px.line(
-            df_filtered, 
+            df_combined_plot, 
             x="year", 
             y="population", 
             color="cityLabel",
+            line_dash="Statut",
             markers=True,
-            labels={"year": "Année", "population": "Population"}
+            labels={"year": "Année", "population": "Population", "Statut": "Statut de la donnee"}
         )
         st.plotly_chart(fig_line, use_container_width=True)
     else:
