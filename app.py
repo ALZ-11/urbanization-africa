@@ -199,6 +199,50 @@ if df_cities.empty or df_roads.empty or df_urban.empty or df_airports.empty or d
     st.error("Impossible de récupérer l'ensemble des données depuis Wikidata. Veuillez vérifier votre connexion.")
     st.stop()
 
+@st.cache_data
+def convert_to_downloadable_csv(df):
+    return df.to_csv(index=False).encode("utf-8")
+st.sidebar.header("Exportation des Donnees")
+st.sidebar.markdown("""
+Telechargez les jeux de donnees compiles en temps reel depuis le triple-store de Wikidata.
+""")
+
+if not df_cities.empty:
+    csv_cities = convert_to_downloadable_csv(df_cities[["cityLabel", "countryLabel", "population", "latitude", "longitude"]])
+    st.sidebar.download_button(
+        label="Telecharger Villes (CSV)",
+        data=csv_cities,
+        file_name="villes_afrique_live.csv",
+        mime="text/csv"
+    )
+
+if not df_roads.empty:
+    csv_roads = convert_to_downloadable_csv(df_roads.drop_duplicates(subset=["roadLabel", "length"]))
+    st.sidebar.download_button(
+        label="Telecharger Routes (CSV)",
+        data=csv_roads,
+        file_name="routes_afrique_live.csv",
+        mime="text/csv"
+    )
+
+if not df_airports.empty:
+    csv_airports = convert_to_downloadable_csv(df_airports[["airportLabel", "countryLabel", "iata", "elevation", "latitude", "longitude"]])
+    st.sidebar.download_button(
+        label="Telecharger Aeroports (CSV)",
+        data=csv_airports,
+        file_name="aeroports_afrique_live.csv",
+        mime="text/csv"
+    )
+
+if not df_ports.empty:
+    csv_ports = convert_to_downloadable_csv(df_ports[["portLabel", "countryLabel", "latitude", "longitude"]])
+    st.sidebar.download_button(
+        label="Telecharger Ports (CSV)",
+        data=csv_ports,
+        file_name="ports_afrique_live.csv",
+        mime="text/csv"
+    )
+
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Cartographie & Démographie", 
     "Infrastructures Routières", 
