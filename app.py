@@ -63,6 +63,17 @@ ORDER BY DESC(?elevation)
 LIMIT 150
 """
 
+PORTS_QUERY = """
+SELECT ?portLabel ?countryLabel ?coords WHERE {
+  ?port wdt:P31/wdt:P279* wd:Q44782; # Port maritime ou commercial
+        wdt:P17 ?country;
+        wdt:P625 ?coords.
+  ?country wdt:P30 wd:Q15.          # Afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}
+LIMIT 100
+"""
+
 COUNTRY_ISO_MAP = {
     "Afrique du Sud": "ZA", "Algérie": "DZ", "Angola": "AO", "Bénin": "BJ", "Botswana": "BW",
     "Burkina Faso": "BF", "Burundi": "BI", "Cabo Verde": "CV", "Cameroun": "CM", "Centrafrique": "CF",
@@ -139,6 +150,27 @@ def load_live_airports():
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
     return df
 
+# New Addition: Fetches and parses maritime port data dynamically
+@st.cache_data(ttl=3600)
+def load_live_ports():
+    extractor = WikidataExtractor()
+    df = extractor.fetch_data(PORTS_QUERY)
+    if not df.empty:
+        df['latitude'] = None
+        df['longitude'] = None
+        for idx, row in df.iterrows():
+            coords_str = row.get('coords')
+            if isinstance(coords_str, str) and coords_str.startswith("Point("):
+                try:
+                    lon_lat_str = coords_str.replace("Point(", "").replace(")", "").split(" ")
+                    df.at[idx, 'longitude'] = float(lon_lat_str[0])
+                    df.at[idx, 'latitude'] = float(lon_lat_str[1])
+                except (ValueError, IndexError):
+                    pass
+        df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
+        df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
+    return df
+
 @st.cache_data(ttl=86400)
 def load_world_bank_data(country_code):
     url = f"http://api.worldbank.org/v2/country/{country_code}/indicator/SP.URB.TOTL.IN.ZS?format=json&date=1970:2025"
@@ -162,8 +194,9 @@ with st.spinner("Connexion à Wikidata et synchronisation globale de l'ensemble 
     df_roads = load_live_roads()
     df_urban = load_live_evolution()
     df_airports = load_live_airports()
+    df_ports = load_live_ports()
 
-if df_cities.empty or df_roads.empty or df_urban.empty or df_airports.empty:
+if df_cities.empty or df_roads.empty or df_urban.empty or df_airports.empty or df_ports.empty:
     st.error("Impossible de récupérer l'ensemble des données depuis Wikidata. Veuillez vérifier votre connexion.")
     st.stop()
 
@@ -171,7 +204,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Cartographie & Démographie", 
     "Infrastructures Routières", 
     "Évolution Urbaine",
-    "Réseau Aéroportuaire",
+    "Réseaux Logistiques",
     "Analyses par Pays"
 ])
 
@@ -261,25 +294,46 @@ with tab3:
         st.info("Veuillez sélectionner au moins une ville pour visualiser son évolution historique.")
 
 with tab4:
-    st.subheader("Réseau des Plateformes Aéroportuaires en Afrique")
+    st.subheader("Réseaux d'Échanges Maritimes et Aériens")
     
-    df_airports_map = df_airports.dropna(subset=["latitude", "longitude"])
-    if not df_airports_map.empty:
-        fig_airports_map = px.scatter_mapbox(
-            df_airports_map,
-            lat="latitude",
-            lon="longitude",
-            hover_name="airportLabel",
-            hover_data={"countryLabel": True, "iata": True, "elevation": True, "latitude": False, "longitude": False},
-            color_discrete_sequence=["teal"],
+    logistic_features = []
+    
+    for _, row in df_airports.dropna(subset=["latitude", "longitude"]).iterrows():
+        logistic_features.append({
+            "Nom": row["airportLabel"],
+            "Latitude": row["latitude"],
+            "Longitude": row["longitude"],
+            "Type": "Aeroport",
+            "Details": f"Code IATA: {row['iata']}" if isinstance(row['iata'], str) else "Code IATA: N/A"
+        })
+        
+    for _, row in df_ports.dropna(subset=["latitude", "longitude"]).iterrows():
+        logistic_features.append({
+            "Nom": row["portLabel"],
+            "Latitude": row["latitude"],
+            "Longitude": row["longitude"],
+            "Type": "Port Maritime",
+            "Details": f"Pays: {row['countryLabel']}"
+        })
+        
+    if logistic_features:
+        df_logistics = pd.DataFrame(logistic_features)
+        fig_logistics = px.scatter_mapbox(
+            df_logistics,
+            lat="Latitude",
+            lon="Longitude",
+            color="Type",
+            hover_name="Nom",
+            hover_data={"Type": True, "Details": True, "Latitude": False, "Longitude": False},
+            color_discrete_map={"Aeroport": "teal", "Port Maritime": "darkblue"},
             zoom=2.5,
             height=500,
             mapbox_style="open-street-map"
         )
-        fig_airports_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig_airports_map, use_container_width=True)
+        fig_logistics.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        st.plotly_chart(fig_logistics, use_container_width=True)
     else:
-        st.warning("Aucune coordonnée valide trouvée pour cartographier les aéroports.")
+        st.warning("Aucune coordonnée valide trouvée pour cartographier les infrastructures.")
         
     st.markdown("---")
     
