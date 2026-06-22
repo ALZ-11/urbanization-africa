@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 from src.extract import WikidataExtractor
 
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
@@ -63,6 +64,20 @@ ORDER BY DESC(?elevation)
 LIMIT 150
 """
 
+COUNTRY_ISO_MAP = {
+    "Afrique du Sud": "ZA", "Algérie": "DZ", "Angola": "AO", "Bénin": "BJ", "Botswana": "BW",
+    "Burkina Faso": "BF", "Burundi": "BI", "Cabo Verde": "CV", "Cameroun": "CM", "Centrafrique": "CF",
+    "Comores": "KM", "Congo-Brazzaville": "CG", "Congo-Kinshasa": "CD", "Côte d'Ivoire": "CI",
+    "Djibouti": "DJ", "Égypte": "EG", "Érythrée": "ER", "Eswatini": "SZ", "Éthiopie": "ET",
+    "Gabon": "GA", "Gambie": "GM", "Ghana": "GH", "Guinée": "GN", "Guinée-Bissau": "GW",
+    "Guinée équatoriale": "GQ", "Kenya": "KE", "Lesotho": "LS", "Liberia": "LR", "Libye": "LY",
+    "Madagascar": "MG", "Malawi": "MW", "Mali": "ML", "Maroc": "MA", "Maurice": "MU",
+    "Mauritanie": "MR", "Mozambique": "MZ", "Namibie": "NA", "Niger": "NE", "Nigéria": "NG",
+    "Ouganda": "UG", "Rwanda": "RW", "Sao Tomé-et-Principe": "ST", "Sénégal": "SN", "Seychelles": "SC",
+    "Sierra Leone": "SL", "Somalie": "SO", "Soudan": "SD", "Soudan du Sud": "SS", "Tanzanie": "TZ",
+    "Tchad": "TD", "Togo": "TG", "Tunisie": "TN", "Zambie": "ZM", "Zimbabwe": "ZW"
+}
+
 @st.cache_data(ttl=3600)
 def load_live_cities():
     extractor = WikidataExtractor()
@@ -124,6 +139,26 @@ def load_live_airports():
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
     return df
 
+@st.cache_data(ttl=86400)
+def load_world_bank_data(country_code):
+    url = f"http://api.worldbank.org/v2/country/{country_code}/indicator/SP.URB.TOTL.IN.ZS?format=json&date=1970:2025"
+    try:
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Verify response structure and extract fields safely
+        if len(data) > 1 and data[1]:
+            records = [
+                {"year": int(item["date"]), "urban_rate": item["value"]} 
+                for item in data[1] 
+                if item["value"] is not None
+            ]
+            return pd.DataFrame(records).sort_values("year")
+    except Exception:
+        pass
+    return pd.DataFrame()
+
 with st.spinner("Connexion à Wikidata et synchronisation globale de l'ensemble des réseaux d'infrastructures..."):
     df_cities = load_live_cities()
     df_roads = load_live_roads()
@@ -134,11 +169,12 @@ if df_cities.empty or df_roads.empty or df_urban.empty or df_airports.empty:
     st.error("Impossible de récupérer l'ensemble des données depuis Wikidata. Veuillez vérifier votre connexion.")
     st.stop()
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Cartographie & Démographie", 
     "Infrastructures Routières", 
     "Évolution Urbaine",
-    "Réseau Aéroportuaire"
+    "Réseau Aéroportuaire",
+    "Analyses par Pays"
 ])
 
 with tab1:
@@ -264,3 +300,43 @@ with tab4:
     )
     fig_elevation.update_layout(yaxis={'categoryorder':'total ascending'})
     st.plotly_chart(fig_elevation, use_container_width=True)
+
+with tab5:
+    st.subheader("Profils de Developpement et Taux d'Urbanisation Nationale")
+    st.markdown("""
+    Cette section croise les données de Wikidata avec les indicateurs macroéconomiques de la **Banque Mondiale** 
+    pour suivre le taux d'urbanisation (pourcentage de la population totale vivant en milieu urbain).
+    """)
+    
+    selectable_countries = sorted(list(COUNTRY_ISO_MAP.keys()))
+    selected_country = st.selectbox("Choisir un pays pour l'analyse nationale", selectable_countries)
+    
+    if selected_country:
+        iso_code = COUNTRY_ISO_MAP[selected_country]
+        
+        with st.spinner(f"Chargement des indicateurs de la Banque Mondiale pour le pays: {selected_country}..."):
+            df_wb = load_world_bank_data(iso_code)
+            
+        if not df_wb.empty:
+            fig_wb = px.line(
+                df_wb,
+                x="year",
+                y="urban_rate",
+                markers=True,
+                labels={"year": "Annee", "urban_rate": "Taux d'urbanisation (en %)"},
+                color_discrete_sequence=["purple"]
+            )
+            fig_wb.update_layout(yaxis_range=[0, 100])
+            st.plotly_chart(fig_wb, use_container_width=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                initial_rate = df_wb.iloc[0]["urban_rate"]
+                initial_year = df_wb.iloc[0]["year"]
+                st.metric(label=f"Taux d'urbanisation initial ({initial_year})", value=f"{initial_rate:.1f}%")
+            with col2:
+                latest_rate = df_wb.iloc[-1]["urban_rate"]
+                latest_year = df_wb.iloc[-1]["year"]
+                st.metric(label=f"Taux d'urbanisation le plus recent ({latest_year})", value=f"{latest_rate:.1f}%")
+        else:
+            st.warning("Aucune donnee trouvee pour ce pays auprès de la Banque Mondiale.")
