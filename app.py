@@ -7,6 +7,14 @@ import numpy as np
 from src.extract import WikidataExtractor
 from src.queries import get_query
 
+from src.transform import (
+    transform_cities,
+    transform_roads,
+    transform_evolution,
+    transform_airports,
+    transform_ports
+)
+
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
 
 st.title("Big Data et Urbanisation en Afrique")
@@ -39,83 +47,31 @@ COUNTRY_ISO_MAP = {
 def load_live_cities():
     extractor = WikidataExtractor()
     df = extractor.fetch_data(CITIES_QUERY)
-    if not df.empty:
-        df["population"] = pd.to_numeric(df["population"], errors='coerce')
-        df['latitude'] = None
-        df['longitude'] = None
-        for idx, row in df.iterrows():
-            coords_str = row.get('coords')
-            if isinstance(coords_str, str) and coords_str.startswith("Point("):
-                try:
-                    lon_lat_str = coords_str.replace("Point(", "").replace(")", "").split(" ")
-                    df.at[idx, 'longitude'] = float(lon_lat_str[0])
-                    df.at[idx, 'latitude'] = float(lon_lat_str[1])
-                except (ValueError, IndexError):
-                    pass
-        df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
-        df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
-    return df
+    return transform_cities(df)
 
 @st.cache_data(ttl=3600)
 def load_live_roads():
     extractor = WikidataExtractor()
     df = extractor.fetch_data(ROADS_QUERY)
-    if not df.empty:
-        df["length"] = pd.to_numeric(df["length"], errors='coerce')
-    return df
+    return transform_roads(df)
 
 @st.cache_data(ttl=3600)
 def load_live_evolution():
     extractor = WikidataExtractor()
     df = extractor.fetch_data(EVOLUTION_QUERY)
-    if not df.empty:
-        df["population"] = pd.to_numeric(df["population"], errors='coerce')
-        df["year"] = pd.to_datetime(df["year"], errors='coerce').dt.year
-        df = df.dropna(subset=["year", "population"])
-        df["year"] = df["year"].astype(int)
-        df = df.sort_values(by=["cityLabel", "year"])
-    return df
+    return transform_evolution(df)
 
 @st.cache_data(ttl=3600)
 def load_live_airports():
     extractor = WikidataExtractor()
     df = extractor.fetch_data(AIRPORTS_QUERY)
-    if not df.empty:
-        df["elevation"] = pd.to_numeric(df["elevation"], errors='coerce')
-        df['latitude'] = None
-        df['longitude'] = None
-        for idx, row in df.iterrows():
-            coords_str = row.get('coords')
-            if isinstance(coords_str, str) and coords_str.startswith("Point("):
-                try:
-                    lon_lat_str = coords_str.replace("Point(", "").replace(")", "").split(" ")
-                    df.at[idx, 'longitude'] = float(lon_lat_str[0])
-                    df.at[idx, 'latitude'] = float(lon_lat_str[1])
-                except (ValueError, IndexError):
-                    pass
-        df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
-        df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
-    return df
+    return transform_airports(df)
 
 @st.cache_data(ttl=3600)
 def load_live_ports():
     extractor = WikidataExtractor()
     df = extractor.fetch_data(PORTS_QUERY)
-    if not df.empty:
-        df['latitude'] = None
-        df['longitude'] = None
-        for idx, row in df.iterrows():
-            coords_str = row.get('coords')
-            if isinstance(coords_str, str) and coords_str.startswith("Point("):
-                try:
-                    lon_lat_str = coords_str.replace("Point(", "").replace(")", "").split(" ")
-                    df.at[idx, 'longitude'] = float(lon_lat_str[0])
-                    df.at[idx, 'latitude'] = float(lon_lat_str[1])
-                except (ValueError, IndexError):
-                    pass
-        df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
-        df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
-    return df
+    return transform_ports(df)
 
 @st.cache_data(ttl=86400)
 def load_world_bank_data(country_code):
