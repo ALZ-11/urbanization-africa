@@ -150,7 +150,6 @@ def load_live_airports():
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
     return df
 
-# New Addition: Fetches and parses maritime port data dynamically
 @st.cache_data(ttl=3600)
 def load_live_ports():
     extractor = WikidataExtractor()
@@ -393,6 +392,7 @@ with tab5:
                 
             df_country_cities = df_cities[df_cities["countryLabel"] == selected_country]
             df_country_airports = df_airports[df_airports["countryLabel"] == selected_country]
+            df_country_ports = df_ports[df_ports["countryLabel"] == selected_country]
             
             local_features = []
             
@@ -416,6 +416,16 @@ with tab5:
                         "Taille": 8
                     })
             
+            if not df_country_ports.empty:
+                for _, row in df_country_ports.dropna(subset=["latitude", "longitude"]).iterrows():
+                    local_features.append({
+                        "Nom": row["portLabel"],
+                        "Latitude": row["latitude"],
+                        "Longitude": row["longitude"],
+                        "Type": "Port Maritime",
+                        "Taille": 8
+                    })
+            
             if local_features:
                 st.markdown("---")
                 st.subheader(f"Repartion des Infrastructures Démographiques et Aéroportuaires : {selected_country}")
@@ -429,7 +439,7 @@ with tab5:
                     size="Taille",
                     hover_name="Nom",
                     hover_data={"Type": True, "Taille": False, "Latitude": False, "Longitude": False},
-                    color_discrete_map={"Ville": "blue", "Aeroport": "teal"},
+                    color_discrete_map={"Ville": "blue", "Aeroport": "teal", "Port Maritime": "darkblue"},
                     zoom=4.5,
                     height=500,
                     mapbox_style="open-street-map"
