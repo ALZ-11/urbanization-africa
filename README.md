@@ -13,7 +13,6 @@ The project demonstrates dynamic data fusion and geospatial visualization by pul
 *   **Decoupled SPARQL Files**: Multi-dimensional semantic queries decoupled into standalone `.sparql` files inside a queries registry module.
 *   **Interactive GIS Mapping**: Mapbox OpenStreetMap scatter maps displaying city density, maritime ports, and aviation hubs color-coded by infrastructure type.
 *   **Multi-Source Data Fusion**: Integration with the World Bank API to overlay city-level demographic data on top of national urbanization trajectories (`SP.URB.TOTL.IN.ZS`).
-*   **Predictive Demographic Modeling**: In-memory least-squares linear regression (via NumPy `polyfit`) calculating and graphing population projections up to the year 2035.
 *   **Performance Telemetry**: Real-time pipeline latency tracking in the sidebar showing database access speeds and verifying local cache efficiency.
 *   **Data Export**: CSV compilation allowing users to download any of the live-generated datasets with a single click.
 
