@@ -7,8 +7,7 @@ import numpy as np
 from src.queries import get_query
 import src.extract as extract
 import src.transform as transform
-
-st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
+from src.constants import COUNTRY_ISO_MAP
 
 st.title("Big Data et Urbanisation en Afrique")
 st.markdown("""
@@ -21,20 +20,6 @@ ROADS_QUERY = get_query("roads")
 EVOLUTION_QUERY = get_query("evolution")
 AIRPORTS_QUERY = get_query("airports")
 PORTS_QUERY = get_query("ports")
-
-COUNTRY_ISO_MAP = {
-    "Afrique du Sud": "ZA", "Algérie": "DZ", "Angola": "AO", "Bénin": "BJ", "Botswana": "BW",
-    "Burkina Faso": "BF", "Burundi": "BI", "Cabo Verde": "CV", "Cameroun": "CM", "Centrafrique": "CF",
-    "Comores": "KM", "Congo-Brazzaville": "CG", "Congo-Kinshasa": "CD", "Côte d'Ivoire": "CI",
-    "Djibouti": "DJ", "Égypte": "EG", "Érythrée": "ER", "Eswatini": "SZ", "Éthiopie": "ET",
-    "Gabon": "GA", "Gambie": "GM", "Ghana": "GH", "Guinée": "GN", "Guinée-Bissau": "GW",
-    "Guinée équatoriale": "GQ", "Kenya": "KE", "Lesotho": "LS", "Liberia": "LR", "Libye": "LY",
-    "Madagascar": "MG", "Malawi": "MW", "Mali": "ML", "Maroc": "MA", "Maurice": "MU",
-    "Mauritanie": "MR", "Mozambique": "MZ", "Namibie": "NA", "Niger": "NE", "Nigéria": "NG",
-    "Ouganda": "UG", "Rwanda": "RW", "Sao Tomé-et-Principe": "ST", "Sénégal": "SN", "Seychelles": "SC",
-    "Sierra Leone": "SL", "Somalie": "SO", "Soudan": "SD", "Soudan du Sud": "SS", "Tanzanie": "TZ",
-    "Tchad": "TD", "Togo": "TG", "Tunisie": "TN", "Zambie": "ZM", "Zimbabwe": "ZW"
-}
 
 @st.cache_data(ttl=3600)
 def load_live_cities():
@@ -452,6 +437,7 @@ with tab5:
             
             if local_features:
                 st.markdown("---")
+                st.subheader(f"Repartion des Infrastructures Démographiques et Aéroportuaires : {selected_country}")
                 
                 df_local_map = pd.DataFrame(local_features)
                 fig_local = px.scatter_map(
