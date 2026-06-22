@@ -261,6 +261,24 @@ with tab2:
     )
     fig_roads.update_layout(yaxis={'categoryorder':'total ascending'})
     st.plotly_chart(fig_roads, use_container_width=True)
+    
+    st.markdown("---")
+    st.subheader("Densite du Reseau de Transit: Nombre de Couloirs Routiers Majeurs par Pays")
+    
+    df_transit_density = df_roads.groupby("countryLabel")["roadLabel"].nunique().reset_index()
+    df_transit_density = df_transit_density.rename(
+        columns={"countryLabel": "Pays", "roadLabel": "Nombre de couloirs"}
+    ).sort_values("Nombre de couloirs", ascending=False).head(15)
+    
+    fig_transit = px.bar(
+        df_transit_density,
+        x="Pays",
+        y="Nombre de couloirs",
+        color="Nombre de couloirs",
+        color_continuous_scale=px.colors.sequential.Oranges,
+        labels={"Pays": "Pays", "Nombre de couloirs": "Nombre de Couloirs"}
+    )
+    st.plotly_chart(fig_transit, use_container_width=True)
 
 with tab3:
     st.subheader("Évolution de la population urbaine (Données Wikidata en direct)")
