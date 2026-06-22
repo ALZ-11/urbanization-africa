@@ -146,8 +146,6 @@ def load_world_bank_data(country_code):
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         data = response.json()
-        
-        # Verify response structure and extract fields safely
         if len(data) > 1 and data[1]:
             records = [
                 {"year": int(item["date"]), "urban_rate": item["value"]} 
@@ -338,5 +336,52 @@ with tab5:
                 latest_rate = df_wb.iloc[-1]["urban_rate"]
                 latest_year = df_wb.iloc[-1]["year"]
                 st.metric(label=f"Taux d'urbanisation le plus recent ({latest_year})", value=f"{latest_rate:.1f}%")
+                
+            df_country_cities = df_cities[df_cities["countryLabel"] == selected_country]
+            df_country_airports = df_airports[df_airports["countryLabel"] == selected_country]
+            
+            local_features = []
+            
+            if not df_country_cities.empty:
+                for _, row in df_country_cities.dropna(subset=["latitude", "longitude"]).iterrows():
+                    local_features.append({
+                        "Nom": row["cityLabel"],
+                        "Latitude": row["latitude"],
+                        "Longitude": row["longitude"],
+                        "Type": "Ville",
+                        "Taille": row["population"] / 200000 + 5 
+                    })
+                    
+            if not df_country_airports.empty:
+                for _, row in df_country_airports.dropna(subset=["latitude", "longitude"]).iterrows():
+                    local_features.append({
+                        "Nom": row["airportLabel"],
+                        "Latitude": row["latitude"],
+                        "Longitude": row["longitude"],
+                        "Type": "Aeroport",
+                        "Taille": 8 
+                    })
+            
+            if local_features:
+                st.markdown("---")
+                st.subheader(f"Repartion des Infrastructures Démographiques et Aéroportuaires : {selected_country}")
+                
+                df_local_map = pd.DataFrame(local_features)
+                fig_local = px.scatter_mapbox(
+                    df_local_map,
+                    lat="Latitude",
+                    lon="Longitude",
+                    color="Type",
+                    size="Taille",
+                    hover_name="Nom",
+                    hover_data={"Type": True, "Taille": False, "Latitude": False, "Longitude": False},
+                    color_discrete_map={"Ville": "blue", "Aeroport": "teal"},
+                    zoom=4.5, 
+                    height=500,
+                    mapbox_style="open-street-map"
+                )
+                fig_local.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+                st.plotly_chart(fig_local, use_container_width=True)
+                
         else:
             st.warning("Aucune donnee trouvee pour ce pays auprès de la Banque Mondiale.")
