@@ -76,3 +76,13 @@ def transform_ports(df: pd.DataFrame) -> pd.DataFrame:
     df["latitude"] = pd.to_numeric(df["latitude"], errors='coerce')
     df["longitude"] = pd.to_numeric(df["longitude"], errors='coerce')
     return df
+
+def transform_world_bank(raw_json: list) -> pd.DataFrame:
+    if len(raw_json) > 1 and raw_json[1]:
+        records = [
+            {"year": int(item["date"]), "urban_rate": item["value"]} 
+            for item in raw_json[1] 
+            if item["value"] is not None
+        ]
+        return pd.DataFrame(records).sort_values("year")
+    return pd.DataFrame()

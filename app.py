@@ -4,16 +4,9 @@ import plotly.express as px
 import requests
 import time
 import numpy as np
-from src.extract import WikidataExtractor
 from src.queries import get_query
-
-from src.transform import (
-    transform_cities,
-    transform_roads,
-    transform_evolution,
-    transform_airports,
-    transform_ports
-)
+import src.extract as extract
+import src.transform as transform
 
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
 
@@ -45,51 +38,39 @@ COUNTRY_ISO_MAP = {
 
 @st.cache_data(ttl=3600)
 def load_live_cities():
-    extractor = WikidataExtractor()
+    extractor = extract.WikidataExtractor()
     df = extractor.fetch_data(CITIES_QUERY)
-    return transform_cities(df)
+    return transform.transform_cities(df)
 
 @st.cache_data(ttl=3600)
 def load_live_roads():
-    extractor = WikidataExtractor()
+    extractor = extract.WikidataExtractor()
     df = extractor.fetch_data(ROADS_QUERY)
-    return transform_roads(df)
+    return transform.transform_roads(df)
 
 @st.cache_data(ttl=3600)
 def load_live_evolution():
-    extractor = WikidataExtractor()
+    extractor = extract.WikidataExtractor()
     df = extractor.fetch_data(EVOLUTION_QUERY)
-    return transform_evolution(df)
+    return transform.transform_evolution(df)
 
 @st.cache_data(ttl=3600)
 def load_live_airports():
-    extractor = WikidataExtractor()
+    extractor = extract.WikidataExtractor()
     df = extractor.fetch_data(AIRPORTS_QUERY)
-    return transform_airports(df)
+    return transform.transform_airports(df)
 
 @st.cache_data(ttl=3600)
 def load_live_ports():
-    extractor = WikidataExtractor()
+    extractor = extract.WikidataExtractor()
     df = extractor.fetch_data(PORTS_QUERY)
-    return transform_ports(df)
+    return transform.transform_ports(df)
 
 @st.cache_data(ttl=86400)
 def load_world_bank_data(country_code):
-    url = f"http://api.worldbank.org/v2/country/{country_code}/indicator/SP.URB.TOTL.IN.ZS?format=json&date=1970:2025"
-    try:
-        response = requests.get(url, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        if len(data) > 1 and data[1]:
-            records = [
-                {"year": int(item["date"]), "urban_rate": item["value"]} 
-                for item in data[1] 
-                if item["value"] is not None
-            ]
-            return pd.DataFrame(records).sort_values("year")
-    except Exception:
-        pass
-    return pd.DataFrame()
+    extractor = extract.WorldBankExtractor()
+    raw_data = extractor.fetch_urban_data(country_code)
+    return transform.transform_world_bank(raw_data)
 
 @st.cache_data
 def convert_to_downloadable_csv(df):
