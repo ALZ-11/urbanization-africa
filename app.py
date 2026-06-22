@@ -280,6 +280,27 @@ with tab3:
     if selected_cities:
         df_filtered = df_urban[df_urban["cityLabel"].isin(selected_cities)]
         
+        display_metrics = selected_cities[:4]
+        cols = st.columns(len(display_metrics))
+        
+        for idx, city in enumerate(display_metrics):
+            df_city_only = df_filtered[df_filtered["cityLabel"] == city].sort_values("year")
+            if len(df_city_only) >= 2:
+                first_rec = df_city_only.iloc[0]
+                last_rec = df_city_only.iloc[-1]
+                
+                growth_rate = ((last_rec["population"] - first_rec["population"]) / first_rec["population"]) * 100
+                timespan = last_rec["year"] - first_rec["year"]
+                
+                with cols[idx]:
+                    st.metric(
+                        label=f"{city} ({int(first_rec['year'])} - {int(last_rec['year'])})",
+                        value=f"{int(last_rec['population']):,}",
+                        delta=f"+{growth_rate:.1f}% sur {int(timespan)} ans"
+                    )
+                    
+        st.markdown("---")
+        
         fig_line = px.line(
             df_filtered, 
             x="year", 
