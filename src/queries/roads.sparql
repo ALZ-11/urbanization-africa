@@ -1,0 +1,9 @@
+SELECT ?roadLabel ?countryLabel ?length WHERE {
+  ?road wdt:P31 wd:Q34442;  # routes et autoroutes
+        wdt:P17 ?country;  # pays
+        wdt:P2043 ?length.  # longueur
+  ?country wdt:P30 wd:Q15.  # filtre: afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}
+ORDER BY DESC(?length)
+LIMIT 100

@@ -1,0 +1,10 @@
+SELECT ?cityLabel ?countryLabel ?population ?coords WHERE {
+  ?city wdt:P31 wd:Q515;        # Ville
+        wdt:P17 ?country;       # Pays
+        wdt:P1082 ?population;  # Population
+        wdt:P625 ?coords.       # Coordonnées géographiques
+  ?country wdt:P30 wd:Q15.      # Filtre : Afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}
+ORDER BY DESC(?population)
+LIMIT 150

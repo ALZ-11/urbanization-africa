@@ -1,0 +1,9 @@
+SELECT ?cityLabel ?year ?population WHERE {
+  ?city wdt:P31 wd:Q515;  # ville
+        wdt:P17 ?country;  # pays
+        p:P1082 ?popStatement.  # population avec historique
+  ?popStatement ps:P1082 ?population; pq:P585 ?year.  # associer année et population
+  ?country wdt:P30 wd:Q15.  # afrique
+  FILTER(YEAR(?year) >= 1970)  # filtrer les données après 1970
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}

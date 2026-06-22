@@ -1,0 +1,11 @@
+SELECT ?airportLabel ?countryLabel ?iata ?coords ?elevation WHERE {
+  ?airport wdt:P31 wd:Q1248784; # Aéroport
+           wdt:P17 ?country;
+           wdt:P625 ?coords.
+  ?country wdt:P30 wd:Q15.     # Afrique
+  OPTIONAL { ?airport wdt:P238 ?iata. } # Code IATA
+  OPTIONAL { ?airport wdt:P2044 ?elevation. } # Altitude (mètres)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}
+ORDER BY DESC(?elevation)
+LIMIT 150

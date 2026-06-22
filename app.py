@@ -5,6 +5,7 @@ import requests
 import time
 import numpy as np
 from src.extract import WikidataExtractor
+from src.queries import get_query
 
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
 
@@ -14,67 +15,11 @@ Analyse exploratoire des dynamiques urbaines et infrastructures routières afric
 Données extraites en temps réel de **Wikidata** via des requêtes **SPARQL**.
 """)
 
-CITIES_QUERY = """
-SELECT ?cityLabel ?countryLabel ?population ?coords WHERE {
-  ?city wdt:P31 wd:Q515;        # Ville
-        wdt:P17 ?country;       # Pays
-        wdt:P1082 ?population;  # Population
-        wdt:P625 ?coords.       # Coordonnées géographiques
-  ?country wdt:P30 wd:Q15.      # Filtre : Afrique
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-}
-ORDER BY DESC(?population)
-LIMIT 150
-"""
-
-ROADS_QUERY = """
-SELECT ?roadLabel ?countryLabel ?length WHERE {
-  ?road wdt:P31 wd:Q34442;  # routes et autoroutes
-        wdt:P17 ?country;  # pays
-        wdt:P2043 ?length.  # longueur
-  ?country wdt:P30 wd:Q15.  # filtre: afrique
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-}
-ORDER BY DESC(?length)
-LIMIT 100
-"""
-
-EVOLUTION_QUERY = """
-SELECT ?cityLabel ?year ?population WHERE {
-  ?city wdt:P31 wd:Q515;  # ville
-        wdt:P17 ?country;  # pays
-        p:P1082 ?popStatement.  # population avec historique
-  ?popStatement ps:P1082 ?population; pq:P585 ?year.  # associer année et population
-  ?country wdt:P30 wd:Q15.  # afrique
-  FILTER(YEAR(?year) >= 1970)  # filtrer les données après 1970
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-}
-"""
-
-AIRPORTS_QUERY = """
-SELECT ?airportLabel ?countryLabel ?iata ?coords ?elevation WHERE {
-  ?airport wdt:P31 wd:Q1248784; # Aéroport
-           wdt:P17 ?country;
-           wdt:P625 ?coords.
-  ?country wdt:P30 wd:Q15.     # Afrique
-  OPTIONAL { ?airport wdt:P238 ?iata. } # Code IATA
-  OPTIONAL { ?airport wdt:P2044 ?elevation. } # Altitude (mètres)
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-}
-ORDER BY DESC(?elevation)
-LIMIT 150
-"""
-
-PORTS_QUERY = """
-SELECT ?portLabel ?countryLabel ?coords WHERE {
-  ?port wdt:P31/wdt:P279* wd:Q44782; # Port maritime ou commercial
-        wdt:P17 ?country;
-        wdt:P625 ?coords.
-  ?country wdt:P30 wd:Q15.          # Afrique
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-}
-LIMIT 100
-"""
+CITIES_QUERY = get_query("cities")
+ROADS_QUERY = get_query("roads")
+EVOLUTION_QUERY = get_query("evolution")
+AIRPORTS_QUERY = get_query("airports")
+PORTS_QUERY = get_query("ports")
 
 COUNTRY_ISO_MAP = {
     "Afrique du Sud": "ZA", "Algérie": "DZ", "Angola": "AO", "Bénin": "BJ", "Botswana": "BW",
@@ -413,7 +358,7 @@ with tab3:
                             projection_records.append({
                                 "cityLabel": city,
                                 "year": f_year,
-                                "population": max(0, int(predicted_pop)), # Clip negative estimates to 0
+                                "population": max(0, int(predicted_pop)),
                                 "Statut": "Projection"
                             })
                             

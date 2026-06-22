@@ -1,0 +1,8 @@
+SELECT ?portLabel ?countryLabel ?coords WHERE {
+  ?port wdt:P31/wdt:P279* wd:Q44782; # Port maritime ou commercial
+        wdt:P17 ?country;
+        wdt:P625 ?coords.
+  ?country wdt:P30 wd:Q15.          # Afrique
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}
+LIMIT 100
