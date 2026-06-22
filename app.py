@@ -47,7 +47,6 @@ SELECT ?cityLabel ?year ?population WHERE {
   FILTER(YEAR(?year) >= 1970)  # filtrer les données après 1970
   SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
 }
-ORDER BY ?city ?year
 """
 
 AIRPORTS_QUERY = """
@@ -116,6 +115,7 @@ def load_live_evolution():
         df["year"] = pd.to_datetime(df["year"], errors='coerce').dt.year
         df = df.dropna(subset=["year", "population"])
         df["year"] = df["year"].astype(int)
+        df = df.sort_values(by=["cityLabel", "year"])
     return df
 
 @st.cache_data(ttl=3600)
@@ -349,7 +349,7 @@ with tab5:
                         "Latitude": row["latitude"],
                         "Longitude": row["longitude"],
                         "Type": "Ville",
-                        "Taille": row["population"] / 200000 + 5 
+                        "Taille": row["population"] / 200000 + 5
                     })
                     
             if not df_country_airports.empty:
@@ -359,7 +359,7 @@ with tab5:
                         "Latitude": row["latitude"],
                         "Longitude": row["longitude"],
                         "Type": "Aeroport",
-                        "Taille": 8 
+                        "Taille": 8
                     })
             
             if local_features:
@@ -376,12 +376,25 @@ with tab5:
                     hover_name="Nom",
                     hover_data={"Type": True, "Taille": False, "Latitude": False, "Longitude": False},
                     color_discrete_map={"Ville": "blue", "Aeroport": "teal"},
-                    zoom=4.5, 
+                    zoom=4.5,
                     height=500,
                     mapbox_style="open-street-map"
                 )
                 fig_local.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
                 st.plotly_chart(fig_local, use_container_width=True)
+                
+            df_country_roads = df_roads[df_roads["countryLabel"] == selected_country]
+            
+            if not df_country_roads.empty:
+                st.markdown("---")
+                st.subheader(f"Principales Infrastructures Routieres Traversantes : {selected_country}")
+                
+                df_roads_display = df_country_roads.drop_duplicates(subset=["roadLabel", "length"])
+                df_roads_display = df_roads_display[["roadLabel", "length"]].rename(
+                    columns={"roadLabel": "Nom de la Route / Autoroute", "length": "Longueur Totale de la Route (km)"}
+                )
+                
+                st.dataframe(df_roads_display, use_container_width=True, hide_index=True)
                 
         else:
             st.warning("Aucune donnee trouvee pour ce pays auprès de la Banque Mondiale.")
