@@ -153,7 +153,7 @@ with tab1:
     st.subheader("Distribution et Démographie des Villes Africaines")
     df_map = df_cities.dropna(subset=["latitude", "longitude"])
     if not df_map.empty:
-        fig_map = px.scatter_mapbox(
+        fig_map = px.scatter_map(
             df_map,
             lat="latitude",
             lon="longitude",
@@ -165,10 +165,10 @@ with tab1:
             size_max=35,
             zoom=2.5,
             height=500,
-            mapbox_style="open-street-map"
+            map_style="open-street-map"
         )
         fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig_map, use_container_width=True)
+        st.plotly_chart(fig_map, width="stretch")
     else:
         st.warning("Aucune coordonnée valide trouvée pour la cartographie.")
 
@@ -185,7 +185,7 @@ with tab1:
         color_continuous_scale=px.colors.sequential.Blues
     )
     fig_cities.update_layout(yaxis={'categoryorder':'total ascending'})
-    st.plotly_chart(fig_cities, use_container_width=True)
+    st.plotly_chart(fig_cities, width="stretch")
 
 with tab2:
     st.subheader("Infrastructures Routières (Données Wikidata en direct)")
@@ -202,7 +202,7 @@ with tab2:
         color_continuous_scale=px.colors.sequential.Oranges
     )
     fig_roads.update_layout(yaxis={'categoryorder':'total ascending'})
-    st.plotly_chart(fig_roads, use_container_width=True)
+    st.plotly_chart(fig_roads, width="stretch")
     
     st.markdown("---")
     st.subheader("Densite du Reseau de Transit: Nombre de Couloirs Routiers Majeurs par Pays")
@@ -220,7 +220,7 @@ with tab2:
         color_continuous_scale=px.colors.sequential.Oranges,
         labels={"Pays": "Pays", "Nombre de couloirs": "Nombre de Couloirs"}
     )
-    st.plotly_chart(fig_transit, use_container_width=True)
+    st.plotly_chart(fig_transit, width="stretch")
 
 with tab3:
     st.subheader("Évolution de la population urbaine (Données Wikidata en direct)")
@@ -312,7 +312,7 @@ with tab3:
             markers=True,
             labels={"year": "Année", "population": "Population", "Statut": "Statut de la donnee"}
         )
-        st.plotly_chart(fig_line, use_container_width=True)
+        st.plotly_chart(fig_line, width="stretch")
     else:
         st.info("Veuillez sélectionner au moins une ville pour visualiser son évolution historique.")
 
@@ -341,7 +341,7 @@ with tab4:
         
     if logistic_features:
         df_logistics = pd.DataFrame(logistic_features)
-        fig_logistics = px.scatter_mapbox(
+        fig_logistics = px.scatter_map(
             df_logistics,
             lat="Latitude",
             lon="Longitude",
@@ -351,10 +351,10 @@ with tab4:
             color_discrete_map={"Aeroport": "teal", "Port Maritime": "darkblue"},
             zoom=2.5,
             height=500,
-            mapbox_style="open-street-map"
+            map_style="open-street-map"
         )
         fig_logistics.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig_logistics, use_container_width=True)
+        st.plotly_chart(fig_logistics, width="stretch")
     else:
         st.warning("Aucune coordonnée valide trouvée pour cartographier les infrastructures.")
         
@@ -374,7 +374,7 @@ with tab4:
         color_continuous_scale=px.colors.sequential.Tealgrn
     )
     fig_elevation.update_layout(yaxis={'categoryorder':'total ascending'})
-    st.plotly_chart(fig_elevation, use_container_width=True)
+    st.plotly_chart(fig_elevation, width="stretch")
 
 with tab5:
     st.subheader("Profils de Developpement et Taux d'Urbanisation Nationale")
@@ -402,7 +402,7 @@ with tab5:
                 color_discrete_sequence=["purple"]
             )
             fig_wb.update_layout(yaxis_range=[0, 100])
-            st.plotly_chart(fig_wb, use_container_width=True)
+            st.plotly_chart(fig_wb, width="stretch")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -452,10 +452,9 @@ with tab5:
             
             if local_features:
                 st.markdown("---")
-                st.subheader(f"Repartion des Infrastructures Démographiques et Aéroportuaires : {selected_country}")
                 
                 df_local_map = pd.DataFrame(local_features)
-                fig_local = px.scatter_mapbox(
+                fig_local = px.scatter_map(
                     df_local_map,
                     lat="Latitude",
                     lon="Longitude",
@@ -466,10 +465,10 @@ with tab5:
                     color_discrete_map={"Ville": "blue", "Aeroport": "teal", "Port Maritime": "darkblue"},
                     zoom=4.5,
                     height=500,
-                    mapbox_style="open-street-map"
+                    map_style="open-street-map"
                 )
                 fig_local.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-                st.plotly_chart(fig_local, use_container_width=True)
+                st.plotly_chart(fig_local, width="stretch")
                 
             df_country_roads = df_roads[df_roads["countryLabel"] == selected_country]
             
@@ -482,7 +481,7 @@ with tab5:
                     columns={"roadLabel": "Nom de la Route / Autoroute", "length": "Longueur Totale de la Route (km)"}
                 )
                 
-                st.dataframe(df_roads_display, use_container_width=True, hide_index=True)
+                st.dataframe(df_roads_display, width="stretch", hide_index=True)
                 
         else:
             st.warning("Aucune donnee trouvee pour ce pays auprès de la Banque Mondiale.")
