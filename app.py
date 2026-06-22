@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
+import time
 from src.extract import WikidataExtractor
 
 st.set_page_config(layout="wide", page_title="Urbanisation en Afrique")
@@ -188,6 +189,13 @@ def load_world_bank_data(country_code):
         pass
     return pd.DataFrame()
 
+@st.cache_data
+def convert_to_downloadable_csv(df):
+    return df.to_csv(index=False).encode("utf-8")
+
+# New Addition: Capture system start timestamp to record the global data loading duration
+start_time = time.time()
+
 with st.spinner("Connexion à Wikidata et synchronisation globale de l'ensemble des réseaux d'infrastructures..."):
     df_cities = load_live_cities()
     df_roads = load_live_roads()
@@ -195,13 +203,12 @@ with st.spinner("Connexion à Wikidata et synchronisation globale de l'ensemble 
     df_airports = load_live_airports()
     df_ports = load_live_ports()
 
+latency = time.time() - start_time
+
 if df_cities.empty or df_roads.empty or df_urban.empty or df_airports.empty or df_ports.empty:
     st.error("Impossible de récupérer l'ensemble des données depuis Wikidata. Veuillez vérifier votre connexion.")
     st.stop()
 
-@st.cache_data
-def convert_to_downloadable_csv(df):
-    return df.to_csv(index=False).encode("utf-8")
 st.sidebar.header("Exportation des Donnees")
 st.sidebar.markdown("""
 Telechargez les jeux de donnees compiles en temps reel depuis le triple-store de Wikidata.
@@ -242,6 +249,15 @@ if not df_ports.empty:
         file_name="ports_afrique_live.csv",
         mime="text/csv"
     )
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Performances du Pipeline")
+st.sidebar.metric(
+    label="Latence du Pipeline (Wikidata)",
+    value=f"{latency:.2f}s",
+    delta="Via Cache" if latency < 0.1 else "Extraction Live (Reseau)",
+    delta_color="normal" if latency < 0.1 else "inverse"
+)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Cartographie & Démographie", 
